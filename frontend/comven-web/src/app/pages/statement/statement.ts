@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit, ChangeDetectorRef } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
+import { RouterLink, RouterLinkActive } from '@angular/router';
 import { ClientService } from '../../core/services/client.service';
 import { OperationService } from '../../core/services/operation.service';
 import { StatementService } from '../../core/services/statement.service';
@@ -20,7 +21,7 @@ import {
 @Component({
   selector: 'app-statement',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink, RouterLinkActive],
   templateUrl: './statement.html',
   styleUrl: './statement.scss'
 })

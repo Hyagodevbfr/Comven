@@ -3,7 +3,7 @@ using Comven.Domain.Enums;
 
 namespace Comven.Infrastructure.Providers;
 
-internal class FakeOperationProvider : IOperationProvider
+public class FakeOperationProvider : IOperationProvider
 {
     public async Task<bool> ExecuteAsync(OperationType type, CancellationToken cancellationToken = default)
     {

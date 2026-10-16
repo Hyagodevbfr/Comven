@@ -1,0 +1,112 @@
+<div class="app-shell">
+  <header class="topbar">
+    <div class="topbar-inner">
+      <span class="brand">Comven</span>
+      <nav class="nav">
+        <a routerLink="/" routerLinkActive="nav-active" [routerLinkActiveOptions]="{ exact: true }">Extrato</a>
+        <a routerLink="/test-scenarios" routerLinkActive="nav-active">Testes de cenários</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <h1>Testes de cenários</h1>
+
+    <p class="intro">
+      Cada teste cria um cliente próprio, chama a API real e reconsulta os dados
+      persistidos no PostgreSQL para verificar o resultado.
+    </p>
+
+    @for (scenario of scenarios; track scenario.id) {
+      <section class="scenario">
+        <div class="scenario-heading">
+          <div>
+            <h2>{{ scenario.id }}. {{ scenario.title }}</h2>
+            <p>{{ scenario.description }}</p>
+          </div>
+
+          <button
+            type="button"
+            class="button button-primary"
+            [disabled]="scenario.running"
+            (click)="execute(scenario)"
+          >
+            {{ scenario.running ? 'Executando...' : 'Executar teste' }}
+          </button>
+        </div>
+
+        @if (scenario.result; as result) {
+          <div class="result">
+            <p
+              class="verdict"
+              [class.verdict-passed]="result.verdict === 'passed'"
+              [class.verdict-failed]="result.verdict === 'failed'"
+              [class.verdict-other]="result.verdict === 'inconclusive' || result.verdict === 'unavailable'"
+            >
+              {{ verdictLabel(result.verdict) }}
+            </p>
+            <p>{{ result.explanation }}</p>
+
+            @if (result.checks.length) {
+              <h3>Verificações</h3>
+              <ul class="checks">
+                @for (check of result.checks; track check.label) {
+                  <li>
+                    <span [class.ok]="check.ok" [class.fail]="!check.ok">
+                      {{ check.ok ? 'OK' : 'ERRO' }}
+                    </span>
+                    {{ check.label }}
+                    <span class="muted">- {{ check.detail }}</span>
+                  </li>
+                }
+              </ul>
+            }
+
+            @if (result.calls.length) {
+              <h3>Respostas HTTP</h3>
+              <ul class="plain">
+                @for (call of result.calls; track call.label) {
+                  <li><strong>{{ call.label }}:</strong> {{ callText(call) }}</li>
+                }
+              </ul>
+            }
+
+            @if (result.finalBalance !== null) {
+              <div class="table-container">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Saldo inicial</th>
+                      <th>Saldo final</th>
+                      <th>Operações</th>
+                      <th>Débitos</th>
+                      <th>Estornos</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>{{ result.initialBalance | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</td>
+                      <td>{{ result.finalBalance | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</td>
+                      <td>{{ result.operationCount }}</td>
+                      <td>{{ result.debitCount }}</td>
+                      <td>{{ result.refundCount }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            }
+
+            @if (result.operationIds.length) {
+              <p class="ids">
+                IDs das operações:
+                @for (id of result.operationIds; track id) {
+                  <code>{{ id }}</code>
+                }
+              </p>
+            }
+          </div>
+        }
+      </section>
+    }
+  </main>
+</div>
