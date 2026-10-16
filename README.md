@@ -41,11 +41,11 @@ Optei por utilizar um `DomainResult` para tratar erros esperados de negócio sem
 
 Defini três status para as operações: `Pending`, `Completed` e `Failed`. Também adicionei uma chave de idempotência para identificar requisições repetidas.
 
+Os valores das operações são definidos no backend, com base no tipo selecionado, evitando que o cliente informe livremente o valor da cobrança.
+
 ### Datas e valores
 
 Estou utilizando `DateTime.UtcNow` para as datas e `decimal` para os valores monetários.
-
-### Banco de dados
 
 ### Banco de dados
 
@@ -56,6 +56,28 @@ Como o desafio envolve movimentações financeiras, procurei adicionar algumas g
 Configurei índices únicos para impedir operações com a mesma chave de idempotência para um cliente e evitar mais de um débito ou estorno para a mesma operação.
 
 Também adicionei restrições para não permitir saldos negativos ou movimentações com valores inválidos.
+
+### Fluxo financeiro
+
+Para a cobrança, utilizei transações para garantir que o débito do saldo, a criação da operação e o registro da movimentação sejam gravados juntos. Se alguma gravação falhar, a transação é revertida.
+
+Também utilizei atualizações condicionais diretamente no banco para evitar problemas quando duas requisições tentam utilizar o saldo do mesmo cliente ao mesmo tempo.
+
+O fornecedor foi implementado de forma simulada, com aproximadamente 20% de chance de falha, conforme sugerido no desafio.
+
+Optei por executar o fornecedor depois de confirmar a cobrança, para não manter uma transação aberta no banco durante o processamento.
+
+Quando o fornecedor retorna uma falha, uma nova transação é responsável por atualizar o status da operação, devolver o saldo e registrar o estorno.
+
+### Limitação conhecida
+
+Um ponto que deixei de fora por enquanto foi a recuperação automática de operações pendentes.
+
+Como a cobrança e a execução do fornecedor acontecem em etapas diferentes, se a aplicação for interrompida depois do débito, mas antes da finalização, a operação poderá permanecer como `Pending`.
+
+O mesmo pode acontecer se não for possível determinar o resultado da execução do fornecedor.
+
+Com mais tempo, implementaria um processamento em segundo plano para identificar e conciliar essas operações, tomando cuidado para não executar a mesma operação novamente de forma indevida.
 
 ## Como executar
 
