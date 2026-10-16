@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Comven.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20261016015106_InitialCreate")]
+    [Migration("20261016051535_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -118,7 +118,8 @@ namespace Comven.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("ClientId", "CreatedAt");
 
-                    b.HasIndex("ClientId", "IdempotencyKey");
+                    b.HasIndex("ClientId", "IdempotencyKey")
+                        .IsUnique();
 
                     b.ToTable("Operations", null, t =>
                         {

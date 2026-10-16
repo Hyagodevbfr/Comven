@@ -48,7 +48,7 @@ public class OperationConfiguration : IEntityTypeConfiguration<Operation>
         {
             x.ClientId,
             x.IdempotencyKey
-        });
+        }).IsUnique();
 
         builder.HasIndex(x => new
         {

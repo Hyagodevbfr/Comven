@@ -115,7 +115,8 @@ namespace Comven.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("ClientId", "CreatedAt");
 
-                    b.HasIndex("ClientId", "IdempotencyKey");
+                    b.HasIndex("ClientId", "IdempotencyKey")
+                        .IsUnique();
 
                     b.ToTable("Operations", null, t =>
                         {

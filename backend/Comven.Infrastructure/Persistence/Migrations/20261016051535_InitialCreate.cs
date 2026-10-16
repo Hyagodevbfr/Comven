@@ -99,7 +99,8 @@ namespace Comven.Infrastructure.Persistence.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_Operations_ClientId_IdempotencyKey",
                 table: "Operations",
-                columns: new[] { "ClientId", "IdempotencyKey" });
+                columns: new[] { "ClientId", "IdempotencyKey" },
+                unique: true);
         }
 
         /// <inheritdoc />

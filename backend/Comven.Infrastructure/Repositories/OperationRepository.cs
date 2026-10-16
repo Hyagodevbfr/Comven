@@ -15,9 +15,14 @@ public class OperationRepository : IOperationRepository
         _context = context;
     }
 
-    public async Task<Operation?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<Operation?> GetByIdAsync( Guid operationId, CancellationToken cancellationToken = default)
     {
-        return await _context.Operations.FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
+        return await _context.Operations
+            .AsNoTracking()
+            .FirstOrDefaultAsync(
+                x => x.Id == operationId,
+                cancellationToken
+        );
     }
 
     public async Task<Operation?> GetByIdempotencyKeyAsync(Guid clientId, Guid idempotencyKey, CancellationToken cancellationToken = default)
@@ -40,11 +45,31 @@ public class OperationRepository : IOperationRepository
                setters => setters
                    .SetProperty(
                        x => x.Status,
-                       OperationStatus.Completed)
+                       OperationStatus.Failed)
                    .SetProperty(
                        x => x.FinishedAt,
                        (DateTime?)finishedAt),
                cancellationToken);
+
+        return affectedRows == 1;
+    }
+
+    public async Task<bool> TryMarkAsCompletedAsync(Guid operationId, CancellationToken cancellationToken = default)
+    {
+        var finishedAt = DateTime.UtcNow;
+
+        var affectedRows = await _context.Operations
+            .Where(x => x.Id == operationId &&
+                        x.Status == OperationStatus.Pending)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(
+                        x => x.Status,
+                        OperationStatus.Completed)
+                    .SetProperty(
+                        x => x.FinishedAt,
+                        (DateTime?)finishedAt),
+                cancellationToken);
 
         return affectedRows == 1;
     }

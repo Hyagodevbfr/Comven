@@ -1,5 +1,8 @@
 ﻿using Comven.Application.Interfaces;
 using Microsoft.EntityFrameworkCore.Storage;
+using Comven.Application.Exceptions;
+using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace Comven.Infrastructure.Persistence;
 
@@ -24,7 +27,20 @@ public class UnitOfWork : IUnitOfWork, IAsyncDisposable
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        return await _context.SaveChangesAsync(cancellationToken);
+        try
+        {
+            return await _context.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException ex)
+            when (ex.InnerException is PostgresException pgEx &&
+                  pgEx.SqlState == PostgresErrorCodes.UniqueViolation &&
+                  pgEx.ConstraintName ==
+                      "IX_Operations_ClientId_IdempotencyKey")
+        {
+            _context.ChangeTracker.Clear();
+
+            throw new DuplicateOperationException();
+        }
     }
 
     public async Task CommitAsync(CancellationToken cancellationToken = default)
