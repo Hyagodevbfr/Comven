@@ -79,6 +79,18 @@ O mesmo pode acontecer se não for possível determinar o resultado da execuçã
 
 Com mais tempo, implementaria um processamento em segundo plano para identificar e conciliar essas operações, tomando cuidado para não executar a mesma operação novamente de forma indevida.
 
+### Testes
+
+Optei por priorizar os testes unitários do domínio e dos serviços, validando as regras de negócio e os principais cenários do fluxo de operações.
+
+Os testes dos serviços utilizam mocks para simular os repositórios e o fornecedor, sem depender de uma conexão com o banco.
+
+Não implementei testes automatizados de integração com PostgreSQL neste momento. Considerando o prazo disponível, preferi concentrar o esforço na implementação das funcionalidades solicitadas.
+
+Sei que os testes unitários não garantem, por si só, o comportamento das transações e da concorrência no banco. Com mais tempo, daria prioridade a esses cenários, principalmente para validar cobranças e estornos simultâneos.
+
+Utilizei IA para auxiliar na escrita dos testes, mas revisei o código gerado, acompanhei os cenários testados e validei a execução para garantir que estavam de acordo com as regras implementadas.
+
 ## Como executar
 
 Em desenvolvimento.
