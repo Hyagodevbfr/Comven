@@ -1,6 +1,8 @@
 using Comven.Application.Interfaces;
 using Comven.Application.Interfaces.Repositories;
+using Comven.Application.Interfaces.Services;
 using Comven.Infrastructure.Persistence;
+using Comven.Infrastructure.Providers;
 using Comven.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -18,6 +20,8 @@ public static class InfrastructureDependencyInjection
         services.AddScoped<IFinancialTransactionRepository, FinancialTransactionRepository>();
 
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+        services.AddScoped<IOperationProvider, FakeOperationProvider>();
 
         return services;
     }

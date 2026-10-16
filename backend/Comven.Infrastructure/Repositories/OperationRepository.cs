@@ -1,5 +1,6 @@
 ﻿using Comven.Application.Interfaces.Repositories;
 using Comven.Domain.Entities;
+using Comven.Domain.Enums;
 using Comven.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -30,8 +31,21 @@ public class OperationRepository : IOperationRepository
         await _context.Operations.AddAsync(operation, cancellationToken);
     }
 
-    public Task<bool> TryMarkAsFailedAsync(Guid operationId, CancellationToken cancellationToken = default)
+    public async Task<bool> TryMarkAsFailedAsync(Guid operationId, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        var finishedAt = DateTime.UtcNow;
+
+        var affectedRows = await _context.Operations.Where(x => x.Id == operationId && x.Status == OperationStatus.Pending)
+           .ExecuteUpdateAsync(
+               setters => setters
+                   .SetProperty(
+                       x => x.Status,
+                       OperationStatus.Completed)
+                   .SetProperty(
+                       x => x.FinishedAt,
+                       (DateTime?)finishedAt),
+               cancellationToken);
+
+        return affectedRows == 1;
     }
 }
