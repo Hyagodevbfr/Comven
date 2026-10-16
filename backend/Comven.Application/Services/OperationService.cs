@@ -5,6 +5,7 @@ using Comven.Application.Interfaces.Repositories;
 using Comven.Application.Interfaces.Services;
 using Comven.Domain.Common;
 using Comven.Domain.Entities;
+using Comven.Application.DTOs.Responses;
 
 namespace Comven.Application.Services;
 
@@ -23,6 +24,17 @@ public class OperationService
         _transactions = transactions;
         _operations = operations;
         _clients = clients;
+    }
+
+    public async Task<OperationResponse?> GetByIdAsync(Guid operationId, CancellationToken cancellationToken = default)
+    {
+        var operation = await _operations.GetByIdAsync(
+            operationId,
+            cancellationToken);
+
+        return operation is null
+            ? null
+            : ToResponse(operation);
     }
 
     public async Task<DomainResult<Operation>> CreateAsync(CreateOperationRequest request, CancellationToken cancellationToken = default)
@@ -214,6 +226,18 @@ public class OperationService
             await _unitOfWork.RollbackAsync(CancellationToken.None);
             throw;
         }
+    }
+
+    private static OperationResponse ToResponse(Operation operation)
+    {
+        return new OperationResponse(
+            operation.Id,
+            operation.ClientId,
+            operation.Type,
+            operation.Amount,
+            operation.Status,
+            operation.CreatedAt,
+            operation.FinishedAt);
     }
 
 }
