@@ -1,4 +1,7 @@
+using Comven.Application.Interfaces;
+using Comven.Application.Interfaces.Repositories;
 using Comven.Infrastructure.Persistence;
+using Comven.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,6 +14,10 @@ public static class InfrastructureDependencyInjection
     {
         services.AddDbContext<AppDbContext>(options =>
             options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
+
+        services.AddScoped<IFinancialTransactionRepository, FinancialTransactionRepository>();
+
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         return services;
     }
