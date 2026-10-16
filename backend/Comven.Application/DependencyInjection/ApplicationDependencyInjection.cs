@@ -10,6 +10,7 @@ public static class ApplicationDependencyInjection
     {
         services.AddScoped<OperationService>();
         services.AddScoped<ClientService>();
+        services.AddScoped<StatementService>();
 
         return services;
     }

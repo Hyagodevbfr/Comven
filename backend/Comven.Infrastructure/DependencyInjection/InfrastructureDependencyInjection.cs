@@ -26,6 +26,7 @@ public static class InfrastructureDependencyInjection
         services.AddScoped<IClientRepository, ClientRepository>();
 
         services.AddScoped<IOperationRepository, OperationRepository>();
+        services.AddScoped<IStatementRepository, StatementRepository>();
 
         return services;
     }
