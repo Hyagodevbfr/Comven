@@ -99,6 +99,38 @@ Por enquanto, implementei apenas o cadastro e a consulta de clientes. Não adici
 
 Também mantive as validações de negócio no Domain e utilizei DTOs para separar as informações recebidas e retornadas pela API.
 
+### API de operações
+
+Implementei endpoints para criar operações e consultar seu resultado pelo identificador.
+
+A criação utiliza o OperationService, onde já estão concentradas as validações, a cobrança do saldo e a execução do fornecedor simulado. Dessa forma, o Controller fica responsável apenas por receber a requisição e retornar a resposta HTTP, sem duplicar regras de negócio.
+
+Também disponibilizei a consulta de uma operação pelo ID. Embora não seja uma exigência direta do desafio, considerei útil para consultar o resultado de uma operação já realizada ou verificar uma operação que permaneceu pendente.
+
+Para as respostas, utilizei DTOs em vez de retornar diretamente as entidades do domínio. Isso evita expor informações internas e mantém o contrato da API separado das regras de negócio.
+
+Utilizei ProblemDetails para padronizar os erros retornados pela API, facilitando o tratamento e a exibição dessas mensagens no frontend.
+
+### Idempotência
+
+A idempotência é controlada pela chave enviada na criação da operação, associada ao cliente. A intenção é impedir que uma mesma solicitação gere duas cobranças, mesmo quando o usuário repete o envio por um clique duplo ou por não ter recebido a primeira resposta.
+
+Validei manualmente esse comportamento pelo Swagger. Ao enviar novamente a mesma requisição, a API retornou a operação já criada, com o mesmo identificador, e não realizou outro débito no banco.
+
+Esse teste confirmou o comportamento para requisições repetidas sequencialmente. A proteção contra concorrência também foi considerada na implementação por meio das restrições do banco e das transações, mas não realizei um teste de carga ou de requisições simultâneas.
+
+### Extrato financeiro
+
+Implementei a consulta do extrato com filtro por período e paginação.
+
+Decidi consultar diretamente as movimentações financeiras, e não apenas as operações, porque uma operação pode produzir mais de um lançamento. Quando ocorre uma falha do fornecedor, por exemplo, precisamos manter tanto o débito original quanto o estorno. Isso permite visualizar o histórico financeiro sem perder informações sobre o que aconteceu.
+
+A consulta relaciona as movimentações com suas operações para recuperar o tipo e o status correspondente. Fiz isso utilizando um JOIN no Entity Framework Core, sem adicionar novos relacionamentos ou propriedades às entidades.
+
+Também optei por realizar os filtros, a ordenação e a paginação diretamente no PostgreSQL. O desafio menciona clientes com milhares de operações por mês, então não faria sentido carregar todo o histórico na aplicação para depois selecionar apenas os registros necessários.
+
+A paginação retorna 20 registros por padrão, com limite de 100 por requisição. Os lançamentos são ordenados dos mais recentes para os mais antigos, utilizando o identificador como segundo critério para manter uma ordenação estável quando duas movimentações possuem o mesmo horário.
+
 ## Como executar
 
 Em desenvolvimento.
