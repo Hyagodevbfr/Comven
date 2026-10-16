@@ -91,6 +91,14 @@ Sei que os testes unitários não garantem, por si só, o comportamento das tran
 
 Utilizei IA para auxiliar na escrita dos testes, mas revisei o código gerado, acompanhei os cenários testados e validei a execução para garantir que estavam de acordo com as regras implementadas.
 
+### Cadastro de clientes
+
+Para simplificar o cadastro, optei por permitir que o saldo inicial seja informado na criação do cliente, já que o desafio não especifica como esse saldo seria disponibilizado.
+
+Por enquanto, implementei apenas o cadastro e a consulta de clientes. Não adicionei funcionalidades de edição, exclusão ou recarga de saldo, pois não fazem parte do fluxo principal solicitado.
+
+Também mantive as validações de negócio no Domain e utilizei DTOs para separar as informações recebidas e retornadas pela API.
+
 ## Como executar
 
 Em desenvolvimento.
