@@ -1,0 +1,334 @@
+
+<div class="app-shell">
+  <header class="topbar">
+    <div class="topbar-inner">
+      <span class="brand">Comven</span>
+    </div>
+  </header>
+
+  <main class="container">
+    <h1>Extrato de movimentações</h1>
+
+    <section class="client-search">
+      <label for="clientId">ID do cliente</label>
+
+      <div class="search-row">
+        <input
+          id="clientId"
+          type="text"
+          [(ngModel)]="clientId"
+          placeholder="Informe o ID do cliente"
+          (keyup.enter)="loadClient()"
+        />
+
+        <button
+          type="button"
+          class="button button-primary"
+          [disabled]="loading"
+          (click)="loadClient()"
+        >
+          {{ loading ? 'Consultando...' : 'Consultar' }}
+        </button>
+        <button type="button" (click)="openClientForm()">
+          Novo cliente
+        </button>
+      </div>
+    </section>
+
+    @if (error) {
+      <div class="alert alert-error" role="alert">{{ error }}</div>
+    }
+
+    @if (client) {
+      <section class="account-summary">
+        <span>Cliente: <strong>{{ client.name }}</strong></span>
+        <span>
+          Saldo:
+          <strong class="balance-value">
+            {{ client.balance | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}
+          </strong>
+        </span>
+      </section>
+
+      <section class="statement-panel">
+        <div class="filters">
+          <div class="field">
+            <label for="startDate">Data inicial</label>
+            <input
+              id="startDate"
+              type="date"
+              [(ngModel)]="startDate"
+            />
+          </div>
+
+          <div class="field">
+            <label for="endDate">Data final</label>
+            <input
+              id="endDate"
+              type="date"
+              [(ngModel)]="endDate"
+            />
+          </div>
+
+          <button
+            type="button"
+            class="button button-secondary"
+            [disabled]="loadingStatement || !startDate || !endDate"
+            (click)="filterStatement()"
+          >
+            Filtrar
+          </button>
+
+          <button
+            type="button"
+            class="button button-primary new-operation"
+            (click)="openOperationForm()"
+          >
+            Nova operação
+          </button>
+        </div>
+
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Operação</th>
+                <th>Data e hora</th>
+                <th>Status</th>
+                <th class="align-right">Valor</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              @if (loadingStatement) {
+                <tr>
+                  <td colspan="4" class="empty-state">
+                    Carregando movimentações...
+                  </td>
+                </tr>
+              } @else {
+                @for (item of items; track item.id) {
+                  <tr>
+                    <td>
+                      {{ getOperationName(item.operationType) }}
+                      <span class="movement-type">
+                        ({{ isRefund(item.transactionType) ? 'Estorno' : 'Débito' }})
+                      </span>
+                    </td>
+
+                    <td class="date-cell">
+                      {{
+                          item.createdAt
+                          | date:'dd/MM/yyyy HH:mm':'-0300':'pt-BR'
+                      }}
+                    </td>
+
+                    <td>
+                      <span
+                        class="status"
+                        [class.status-success]="item.operationStatus === 2 && !isRefund(item.transactionType)"
+                        [class.status-failed]="item.operationStatus === 3 && !isRefund(item.transactionType)"
+                        [class.status-refund]="isRefund(item.transactionType)"
+                      >
+                        {{
+                          isRefund(item.transactionType)
+                            ? 'Estornado'
+                            : getStatusName(item.operationStatus)
+                        }}
+                      </span>
+                    </td>
+
+                    <td
+                      class="amount align-right"
+                      [class.amount-positive]="isRefund(item.transactionType)"
+                    >
+                      {{ isRefund(item.transactionType) ? '+' : '−' }}
+                      {{ item.amount | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="4" class="empty-state">
+                      Nenhuma movimentação encontrada para o período selecionado.
+                    </td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <div class="table-footer">
+          <span>
+            {{ totalItems }} movimentação(ões) encontrada(s)
+          </span>
+
+          <div class="pagination">
+            <button
+              type="button"
+              class="button button-secondary"
+              [disabled]="page <= 1 || loadingStatement"
+              (click)="changePage(-1)"
+            >
+              Anterior
+            </button>
+
+            <span>{{ page }} de {{ totalPages }}</span>
+
+            <button
+              type="button"
+              class="button button-secondary"
+              [disabled]="page >= totalPages || loadingStatement"
+              (click)="changePage(1)"
+            >
+              Próxima
+            </button>
+          </div>
+        </div>
+      </section>
+    } @else if (!loading) {
+      <div class="welcome-state">
+        Informe o identificador de um cliente para consultar seu extrato.
+      </div>
+    }
+  </main>
+</div>
+
+@if (showOperationForm && client) {
+  <div class="modal-backdrop">
+    <section
+      class="modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="operation-title"
+    >
+      <div class="modal-heading">
+        <h2 id="operation-title">Nova operação</h2>
+
+        <button
+          type="button"
+          class="close-button"
+          aria-label="Fechar"
+          [disabled]="creatingOperation"
+          (click)="closeOperationForm()"
+        >
+          ×
+        </button>
+      </div>
+
+      <div class="modal-content">
+        <div class="field">
+          <label for="operationType">Tipo de operação</label>
+
+          <select
+            id="operationType"
+            [ngModel]="operationType"
+            (ngModelChange)="changeOperationType(+$event)"
+            [disabled]="creatingOperation || !!lastOperation"
+          >
+            @for (type of operationTypes; track type.value) {
+              <option [ngValue]="type.value">
+                {{ type.label }} -
+                {{ type.price | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}
+              </option>
+            }
+          </select>
+        </div>
+
+        @if (operationError) {
+          <div class="alert alert-error" role="alert">
+            {{ operationError }}
+          </div>
+        }
+
+        @if (operationMessage) {
+          <div
+            class="alert"
+            [class.alert-success]="lastOperation?.status === 2"
+            [class.alert-error]="lastOperation?.status === 3"
+          >
+            {{ operationMessage }}
+          </div>
+        }
+
+        @if (lastOperation) {
+          <div class="operation-result">
+            <span>Identificador da operação</span>
+            <code>{{ lastOperation.id }}</code>
+          </div>
+        }
+      </div>
+
+      <div class="modal-actions">
+        <button
+          type="button"
+          class="button button-secondary"
+          [disabled]="creatingOperation"
+          (click)="closeOperationForm()"
+        >
+          Fechar
+        </button>
+
+        @if (!lastOperation) {
+          <button
+            type="button"
+            class="button button-primary"
+            [disabled]="creatingOperation"
+            (click)="createOperation()"
+          >
+            {{ creatingOperation ? 'Processando...' : 'Executar operação' }}
+          </button>
+        }
+      </div>
+    </section>
+  </div>
+}
+
+
+@if (showClientForm) {
+  <div class="client-modal-backdrop">
+    <div class="client-modal">
+      <h3>Novo cliente</h3>
+
+      <form (ngSubmit)="createClient()">
+        <label for="newClientName">Nome</label>
+        <input
+          id="newClientName"
+          type="text"
+          name="newClientName"
+          [(ngModel)]="newClientName"
+          required
+        />
+
+        <label for="newClientBalance">Saldo inicial (R$)</label>
+        <input
+          id="newClientBalance"
+          type="number"
+          name="newClientBalance"
+          [(ngModel)]="newClientBalance"
+          min="0"
+          step="0.01"
+          required
+        />
+
+        @if (clientError) {
+          <p class="form-error">{{ clientError }}</p>
+        }
+
+        <div class="client-modal-actions">
+          <button
+            type="button"
+            (click)="closeClientForm()"
+            [disabled]="creatingClient"
+          >
+            Cancelar
+          </button>
+
+          <button type="submit" [disabled]="creatingClient">
+            {{ creatingClient ? 'Salvando...' : 'Cadastrar' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
