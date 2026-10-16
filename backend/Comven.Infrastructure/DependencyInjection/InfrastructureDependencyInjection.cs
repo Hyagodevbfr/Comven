@@ -23,6 +23,10 @@ public static class InfrastructureDependencyInjection
 
         services.AddScoped<IOperationProvider, FakeOperationProvider>();
 
+        services.AddScoped<IClientRepository, ClientRepository>();
+
+        services.AddScoped<IOperationRepository, OperationRepository>();
+
         return services;
     }
 }
