@@ -45,6 +45,18 @@ Defini três status para as operações: `Pending`, `Completed` e `Failed`. Tamb
 
 Estou utilizando `DateTime.UtcNow` para as datas e `decimal` para os valores monetários.
 
+### Banco de dados
+
+### Banco de dados
+
+Escolhi utilizar PostgreSQL com Entity Framework Core para a persistência dos dados, mantendo os mapeamentos das entidades separados do `DbContext`.
+
+Como o desafio envolve movimentações financeiras, procurei adicionar algumas garantias diretamente no banco, sem depender apenas das validações da aplicação.
+
+Configurei índices únicos para impedir operações com a mesma chave de idempotência para um cliente e evitar mais de um débito ou estorno para a mesma operação.
+
+Também adicionei restrições para não permitir saldos negativos ou movimentações com valores inválidos.
+
 ## Como executar
 
 Em desenvolvimento.
