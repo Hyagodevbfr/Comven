@@ -85,9 +85,13 @@ Optei por priorizar os testes unitários do domínio e dos serviços, validando 
 
 Os testes dos serviços utilizam mocks para simular os repositórios e o fornecedor, sem depender de uma conexão com o banco.
 
-Não implementei testes automatizados de integração com PostgreSQL neste momento. Considerando o prazo disponível, preferi concentrar o esforço na implementação das funcionalidades solicitadas.
+Implementei três testes de integração utilizando o PostgreSQL real, cobrindo débito com saldo suficiente, tentativa de operação sem saldo e estorno.
 
-Sei que os testes unitários não garantem, por si só, o comportamento das transações e da concorrência no banco. Com mais tempo, daria prioridade a esses cenários, principalmente para validar cobranças e estornos simultâneos.
+Os testes utilizam os Services, Repositories e transações reais da aplicação. Apenas o fornecedor foi simulado para garantir resultados previsíveis nos cenários de sucesso e falha.
+
+Ao final do desenvolvimento, a suíte ficou com 57 testes passando, sendo 54 unitários e 3 de integração.
+
+Sei que os testes implementados ainda não cobrem todos os cenários de concorrência. Com mais tempo, ampliaria essa cobertura, principalmente para validar operações simultâneas no PostgreSQL.
 
 Utilizei IA para auxiliar na escrita dos testes, mas revisei o código gerado, acompanhei os cenários testados e validei a execução para garantir que estavam de acordo com as regras implementadas.
 
@@ -131,6 +135,145 @@ Também optei por realizar os filtros, a ordenação e a paginação diretamente
 
 A paginação retorna 20 registros por padrão, com limite de 100 por requisição. Os lançamentos são ordenados dos mais recentes para os mais antigos, utilizando o identificador como segundo critério para manter uma ordenação estável quando duas movimentações possuem o mesmo horário.
 
+### Frontend
+
+Para o frontend, utilizei Angular e procurei manter a interface simples, seguindo a proposta apresentada no desafio.
+
+A tela permite cadastrar e consultar clientes, visualizar o saldo disponível, criar operações e consultar o extrato financeiro com filtro por período e paginação.
+
+Optei por não utilizar bibliotecas de componentes, já que a interface é relativamente pequena e os recursos nativos do Angular foram suficientes.
+
+Também mantive os cálculos e as validações financeiras no backend. O frontend apenas envia as solicitações e apresenta os resultados retornados pela API.
+
+### Testes de cenários
+
+Durante os testes, percebi que alguns comportamentos eram difíceis de reproduzir manualmente, principalmente as requisições simultâneas e as falhas do fornecedor.
+
+Por isso, tive a ideia de criar uma página separada no Angular para facilitar a validação desses cenários, permitindo executá-los diretamente pela interface.
+
+Nela, é possível testar saldo insuficiente, falha do fornecedor com estorno, idempotência e concorrência entre operações que disputam o mesmo saldo.
+
+Essa página foi implementada principalmente com auxílio de IA. A ideia de criar a funcionalidade foi minha, assim como a definição dos cenários e dos comportamentos esperados. Passei as instruções para a IA realizar a implementação, acompanhei o desenvolvimento, revisei o código e validei o funcionamento dos testes.
+
+Optei por utilizar IA nessa parte para agilizar o desenvolvimento dentro do prazo do desafio, já que os fluxos principais do sistema estavam implementados e o objetivo dessa página era facilitar a demonstração das regras de negócio.
+
+Também preferi manter essa funcionalidade separada do extrato, para não misturar os testes técnicos com o uso normal do sistema.
+
 ## Como executar
 
-Em desenvolvimento.
+### Pré-requisitos
+
+Para executar o projeto, é necessário ter instalado:
+
+- .NET SDK 8
+- Node.js
+- Docker Desktop
+- npm
+
+### Banco de dados
+
+O PostgreSQL está configurado para execução pelo Docker.
+
+Na pasta onde está o arquivo `docker-compose.yml`, execute:
+
+```bash
+docker compose up -d
+```
+
+O PostgreSQL utiliza a porta `5433` na máquina local, pois a porta `5432` já estava sendo utilizada durante o desenvolvimento.
+
+### Backend
+
+### Configurar a conexão com o banco
+
+Na pasta `backend/Comven.Api`, configure a connection string utilizando os User Secrets do .NET. Dessa forma, a senha do banco fica armazenada localmente, sem precisar adicioná-la ao repositório.
+
+Abra um terminal na pasta backend/Comven.Api para configurar a conexão. Depois, volte à pasta backend antes de executar o comando das migrations.
+
+Primeiro, inicialize os User Secrets, caso ainda não estejam configurados:
+
+```powershell
+dotnet user-secrets init
+```
+
+Depois, configure a conexão com o PostgreSQL:
+
+```powershell
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=localhost;Port=5433;Database=comven;Username=comven;Password=SUA_SENHA"
+```
+
+Substitua `SUA_SENHA` pela senha configurada no Docker Compose.
+
+Para verificar se a configuração foi salva:
+
+```powershell
+dotnet user-secrets list
+```
+
+Com isso, a API poderá utilizar a connection string durante a execução em ambiente de desenvolvimento, sem precisar alterar o `appsettings.json`.
+
+Com a conexão configurada, execute as migrations:
+
+```bash
+dotnet ef database update --project Comven.Infrastructure --startup-project Comven.Api
+```
+
+Depois, inicie a API:
+
+```bash
+cd Comven.Api
+dotnet run
+```
+
+O Swagger estará disponível no endereço informado pelo terminal da API, acrescentando `/swagger`.
+
+### Frontend
+
+Em outro terminal, entre na pasta do Angular:
+
+```bash
+cd frontend/comven-web
+npm install
+```
+
+Depois, execute:
+
+```bash
+npx ng serve --proxy-config proxy.conf.json
+```
+
+Acesse `http://localhost:4200`.
+
+O proxy está configurado para encaminhar as chamadas `/api` para o backend local.
+
+### Testes automatizados
+
+Os testes de integração utilizam o PostgreSQL real. Para executá-los, configure a variável de ambiente `COMVEN_TEST_CONNECTION` com os dados do banco.
+
+No PowerShell:
+
+```powershell
+$env:COMVEN_TEST_CONNECTION = "Host=localhost;Port=5433;Database=comven;Username=comven;Password=SUA_SENHA"
+```
+
+Substitua `SUA_SENHA` pela senha configurada no Docker.
+
+Na pasta `backend`, execute todos os testes:
+
+```powershell
+dotnet test
+```
+
+Para executar apenas os testes unitários:
+
+```powershell
+dotnet test --filter "Category!=Integration"
+```
+
+Para executar apenas os testes de integração:
+
+```powershell
+dotnet test --filter "Category=Integration"
+```
+
+Os testes de integração criam seus próprios registros no PostgreSQL e removem esses dados ao finalizar.
